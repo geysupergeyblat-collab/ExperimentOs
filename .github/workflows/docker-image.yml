@@ -1,0 +1,41 @@
+name: Build ToaruOS
+
+on:
+  push:
+    branches: [ "*" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t toaruos-builder .
+
+      - name: Compile and Extract ISO
+        run: |
+          # 1. Запускаем сборку через смонтированную папку (если докер — это тулчейн)
+          docker run --rm -v $(pwd):/toaruos -w /toaruos toaruos-builder make || true
+
+          # 2. Если образ скомпилировался внутри самого Dockerfile — выдергиваем его наружу
+          CONTAINER_ID=$(docker create toaruos-builder)
+          docker cp $CONTAINER_ID:/toaruos/toaruos.iso ./toaruos.iso 2>/dev/null || true
+          docker cp $CONTAINER_ID:/toaruos/cdrom.iso ./cdrom.iso 2>/dev/null || true
+          docker rm -v $CONTAINER_ID
+
+          # 3. Выводим найденные образы в лог
+          find . -maxdepth 2 -name "*.iso" -o -name "*.img"
+
+      - name: Upload OS Disk Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: toaruos-image
+          path: |
+            *.iso
+            *.img
+            **/*.iso
+          if-no-files-found: warn
