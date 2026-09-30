@@ -3,7 +3,7 @@ name: Build ToaruOS
 on:
   push:
     branches: [ "*" ]
-  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,16 +13,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run Build Script
+      - name: Show Repo Files
         run: |
-          chmod +x ./util/docker-build.sh
-          ./util/docker-build.sh
-
-      - name: Upload OS Disk Image
-        uses: actions/upload-artifact@v4
-        with:
-          name: toaruos-image
-          path: |
-            *.iso
-            *.img
-          if-no-files-found: warn
+          echo "=== ЧТО ЛЕЖИТ В КОРНЕ: ==="
+          ls -la
+          echo "=== ЧТО ЛЕЖИТ В ПАПКЕ UTIL (если есть): ==="
+          ls -la util || echo "Папки util нет"
